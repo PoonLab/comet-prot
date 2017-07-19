@@ -1,0 +1,625 @@
+USE_MPI_CACHING = 1;
+PRINT_DIGITS = -1;
+
+
+function add_discrete_node (node_id, max_parents, sample_size, nlevels)
+{
+	node = {};
+	node["NodeID"] = node_id;
+    node["NodeType"] = 0;
+    node["MaxParents"] = max_parents;
+	node["PriorSize"] = sample_size;
+	node["NumLevels"] = nlevels;
+	return node;
+}
+
+function add_gaussian_node (node_id, max_parents, sample_size, mean, precision, scale)
+{
+	node = {};
+	node["NodeID"] = node_id;
+    node["NodeType"] = 1;
+	node["MaxParents"] = max_parents;
+	node["PriorSize"] = sample_size;
+	node["PriorMean"]	= mean;
+	node["PriorPrecision"]	= precision;
+	node["PriorScale"] = scale;
+	return node;
+}
+
+
+
+/* utility functions from ReadDelimitedFiles.bf */
+function ReadCSVTable (fileName, haveHeader)
+{
+	if (Abs(fileName) == 0)
+	{
+		fscanf (PROMPT_FOR_FILE, "Lines", inData);
+	}
+	else
+	{
+		fscanf (fileName, "Lines", inData);		
+	}
+	if (haveHeader)
+	{
+		output = {};
+		output[0] = splitOnRegExp (inData[0],"\\,");
+	}
+	felMXString = "";
+	felMXString * 256;
+	felMXString * "_tempMatrix={";
+	for (lineID = haveHeader; lineID < Columns(inData); lineID = lineID + 1)
+	{
+		felMXString * ("{" + inData[lineID] + "}\n");
+	}
+	felMXString * "}";
+	felMXString * 0;
+	ExecuteCommands (felMXString);
+	felMXString = 0;
+	inData = 0;
+	if (haveHeader)
+	{
+		output[1] = _tempMatrix;
+		_tempMatrix = 0;
+		return output;
+	}
+	return _tempMatrix;
+}
+
+
+function splitOnRegExp (string, splitter)
+{
+	matched = string || splitter;
+	splitBits = {};
+	if (matched [0] < 0)
+	{
+		splitBits[0] = string;
+	}
+	else
+	{
+		mc = 0;
+		if (matched[0] == 0)
+		{
+			fromPos = matched[1]+1;
+			mc = 2;
+		}
+		else
+		{
+			fromPos = 0;
+			toPos	= 0;
+		}
+		for (; mc < Rows (matched); mc = mc+2)
+		{
+			toPos = matched[mc]-1;
+			splitBits [Abs(splitBits)] = string[fromPos][toPos];
+			fromPos    = matched[mc+1]+1;
+		}
+		splitBits [Abs(splitBits)] = string[fromPos][Abs(string)-1];
+	}
+	return splitBits;
+}
+
+
+/* a wrapper around ReadCSVTable */
+function import_data (inData, hasHeader)
+{
+	timer0 = Time(0);
+	file_input = ReadCSVTable (inData, hasHeader);
+	
+	bgm_data_matrix = {{}};
+	names = {{}};
+	num_nodes = 0;
+	
+	if (hasHeader)
+	{
+		names = file_input["0"];
+		bgm_data_matrix = file_input["1"];
+		
+		fprintf (stdout, "Read ", Rows(bgm_data_matrix), " cases from file.\n");
+		
+		num_nodes = Columns(bgm_data_matrix);
+		
+		if (Abs(file_input["0"]) != num_nodes)
+		{
+			fprintf (stdout, "ERROR! Number of items in header does not match the number of items in the data matrix.");
+			return 0;
+		}
+		
+		fprintf (stdout, "Detected ", num_nodes, " variables.\n");
+	}
+	else
+	{
+		bgm_data_matrix = file_input;
+		
+		fprintf (stdout, "Read ", Rows(bgm_data_matrix), " cases from file.\n");
+		
+		num_nodes = Columns(bgm_data_matrix);
+		names = {num_nodes, 1};
+		
+		for (i = 0; i < num_nodes; i = i+1)
+		{
+			names[i] = i;
+		}
+		
+		fprintf (stdout, "Detected ", num_nodes, " variables.\n");
+	}
+	
+	return bgm_data_matrix;
+}
+
+
+
+function import_cache (filename, cache_name)
+{
+	fscanf (filename, "Raw", cacheStr);
+	ExecuteCommands(cache_name+" = "+cacheStr+";");
+	return 0;
+}
+
+
+function attach_cache (_bgm, cache)
+{
+	ExecuteCommands ("SetParameter("+_bgm+", BGM_SCORE_CACHE, cache);");
+	return 0;
+}
+
+
+
+
+/* ____________________________________________________________ */
+/*  accessor functions											*/
+function setStructure (_bgm, graph_matrix)
+{
+	ExecuteCommands("SetParameter ("+_bgm+", BGM_GRAPH_MATRIX, graph_matrix);");
+}
+
+function setOrder (_bgm, order_matrix)
+{
+	if (Rows(order_matrix) > 1)
+	{
+		if (Columns(order_matrix) == 1)
+		{
+			t_order_matrix = Transpose(order_matrix);
+			ExecuteCommands("SetParameter ("+_bgm+", BGM_NODE_ORDER, t_order_matrix);");
+		}
+		else
+		{
+			fprintf (stdout, "Warning: expecting row vector matrix, received non-vector matrix");
+			fprintf (stdout, "         with dimensions ", Rows(order_matrix), " x ", Columns(order_matrix), "\n");
+			fprintf (stdout, "Node order not set!\n");
+		}
+	}
+	else
+	{
+		ExecuteCommands ("SetParameter ("+_bgm+", BGM_NODE_ORDER, order_matrix);");
+	}
+}
+
+
+function setConstraints (_bgm, constraint_matrix)
+{
+	ExecuteCommands("SetParameter ("+_bgm+", BGM_CONSTRAINT_MATRIX, constraint_matrix);");
+	return 0;
+}
+
+
+/* ____________________________________________________________ */
+/*	Assign data matrix to _BayesianGraphicalModel object 		*/
+function attach_data (_bgm, data, impute_max, impute_burn, impute_samp)
+{
+	BGM_IMPUTE_MAXSTEPS = impute_max$1;
+	BGM_IMPUTE_BURNIN = impute_burn$1;
+	BGM_IMPUTE_SAMPLES = impute_samp$1;
+
+	ExecuteCommands("SetParameter ("+_bgm+", BGM_DATA_MATRIX, data);");
+	return 0;
+}
+
+
+
+/*  
+	Structural (graph) MCMC by Metropolis-Hastings				
+ 		Returns matrix object containing chain trace, edge			
+	marginal posterior probabilities, and best graph as 		
+	adjacency matrix.											
+*/
+function graph_MCMC (_bgm, duration, burnin, num_samples, rand_tolerance, prob_swap, with_order)
+{
+	if (Rows(with_order) * Columns(with_order) > 0)
+	{
+		/* fixed node order */
+		ExecuteCommands("setOrder ("+_bgm+", with_order);");
+		BGM_OPTIMIZATION_METHOD = 2;
+	}
+	else
+	{
+		/* shuffle node order */
+		BGM_OPTIMIZATION_METHOD = 3;
+	}
+	
+	BGM_MCMC_MAXSTEPS 	= duration;
+	BGM_MCMC_BURNIN		= burnin;
+	BGM_MCMC_SAMPLES 	= num_samples;
+	BGM_MCMC_MAXFAILS	= rand_tolerance;
+	BGM_MCMC_PROBSWAP	= prob_swap;
+	
+	ExecuteCommands("Optimize(res, "+_bgm+");");
+	
+	return res;
+}
+
+
+/*
+	Order (node precedence permutation) MCMC by Metropolis-Hastings
+*/
+function order_MCMC (_bgm, duration, burnin, num_samples)
+{
+	BGM_OPTIMIZATION_METHOD = 4;
+	
+	BGM_MCMC_MAXSTEPS 	= duration;
+	BGM_MCMC_BURNIN		= burnin;
+	BGM_MCMC_SAMPLES 	= num_samples;
+	
+	ExecuteCommands("Optimize(res, "+_bgm+");");
+	
+	return res;
+}
+
+
+
+
+
+function display_MCMC_chain (res)
+{
+	if (Rows(res)*Columns(res) == 0)
+	{
+		fprintf (stdout, "ERROR: Cannot display MCMC chain for empty matrix\n");
+		return 1;
+	}
+	
+	pp_trace = res[-1][0];
+	min_trace = pp_trace[0];
+	max_trace = pp_trace[0];
+	
+	/* locate min/max and end of trace */
+	for (k = 0; k < Rows(pp_trace); k = k+1)
+	{
+		if (pp_trace[k] == 0)
+		{
+			break;
+		}
+		if (pp_trace[k] < min_trace)
+		{
+			min_trace = pp_trace[k];
+		}
+		if (pp_trace[k] > max_trace)
+		{
+			max_trace = pp_trace[k];
+		}
+	}
+	k = k-1;
+	pp_trace = pp_trace[{{0,0}}][{{k-1,0}}];
+	
+	
+	columnHeaders = {{"MCMC chain","sample;1;2;3;4;5;6;7;8;9"}};
+	
+	OpenWindow (CHARTWINDOW,{{"Posterior probability"}
+			{"columnHeaders"}
+			{"pp_trace"}
+			{"Step Plot"}
+			{"Index"}
+			{"MCMC chain"}
+			{"chain sample step"}
+			{"posterior prob."}
+			{""}
+			{"0"}
+			{""}
+			{"0;0"}
+			{"10;1.309;0.785398"}
+			{"Times:12:0;Times:10:0;Times:12:2"}
+			{"0;0;13816530;16777215;0;0;6579300;11842740;13158600;14474460;0;3947580;16777215;15670812;6845928;16771158;2984993;9199669;7018159;1460610;16748822;11184810;14173291"}
+			{"16,"+min_trace+","+max_trace}
+			},
+			"405;462;105;100");
+	
+	return 0;
+}
+
+function write_MCMC_chain(filename, res) {
+    pp_trace = res[-1][0];
+    fprintf(filename, CLEAR_FILE, KEEP_OPEN);
+    for (k = 0; k < Rows(pp_trace); k=k+1) {
+        fprintf(filename, pp_trace[k], "\n");
+    }
+    fprintf(filename, CLOSE_FILE);
+}
+
+
+function get_MCMC_graph (res, num_nodes, mode)
+{
+	/* mode = -1 		: best_graph
+	   mode = 0 		: last_graph
+	   0 < mode <= 1 	: marginal posterior graph with threshold = mode (e.g. 0.9)
+	   */
+	graph = {num_nodes, num_nodes};
+	
+	if (mode > 0)
+	{
+		for (row = 0; row < num_nodes * num_nodes; row = row+1)
+		{
+			if (res[row][1] >= mode)
+			{
+				graph[row $ num_nodes][row % num_nodes] = 1;
+			}
+		}
+	}
+	else
+	{
+		for (row = 0; row < num_nodes; row = row+1)
+		{
+			for (col = 0; col < num_nodes; col = col+1)
+			{
+				graph[row][col] = res[row*num_nodes+col][mode+3];
+			}
+		}
+	}
+	
+	return graph;
+}
+
+
+function write_edgelist (filename,res,directed)
+{
+	fprintf (filename, CLEAR_FILE, KEEP_OPEN);
+	if (directed)	
+	{
+		for (row = 0; row < num_nodes; row = row+1)
+		{
+			for (col = 0; col < num_nodes; col = col+1)
+			{
+				fprintf (filename, names[row], ",", names[col], ",", res[row*num_nodes+col][1], "\n");
+			}
+		}
+	}
+	else
+	{
+		for (row = 0; row < num_nodes-1; row = row+1)
+		{
+			for (col = row+1; col < num_nodes; col = col+1)
+			{
+				fprintf (filename, names[row], ",", names[col], ",", res[row*num_nodes+col][1] + res[col*num_nodes+row][1], "\n");
+			}
+		}
+	}
+	fprintf (filename, CLOSE_FILE);
+	return 0;
+}
+
+
+function mcmc_graph_to_dotfile (filename, threshold, res, nodes)
+{
+	fprintf(filename, CLEAR_FILE, "digraph BGM {\n");
+	
+	// output nodes
+	for (i=0; i<num_nodes; i=i+1) {
+	    fprintf(filename, "\t", i, "[label=\"", names[i], "\"];\n");
+	}
+	for (row = 0; row < num_nodes * num_nodes; row = row+1)
+	{
+		if (res[row][1] >= threshold)
+		{
+			parent = row $ num_nodes;
+			child = row % num_nodes;
+			fprintf (filename, "\t", parent, "->", child, ";\n");
+		}
+	}
+	
+	fprintf(filename, "}\n");
+}
+
+
+/* argument must be string identifier of BGM object */
+function getNetworkParameters (_bgm)
+{
+	ExecuteCommands("GetString (res, "+_bgm+", 1);");
+	ExecuteCommands(res);
+	/* returns string identifier to associative array */
+	ExecuteCommands("params="+_bgm+"_export;");
+	return params;
+}
+
+
+function getCache (_bgm)
+{
+	ExecuteCommands("GetString (res, "+_bgm+", 0);");
+	return res;
+}
+
+
+function getStructure (_bgm)
+{
+	ExecuteCommands("GetInformation (s, "+_bgm+", 0);");
+	return s;
+}
+
+function getNodeOrder (_bgm)
+{
+	ExecuteCommands("GetInformation (s, "+_bgm+", 1);");
+	return s;
+}
+
+
+
+
+
+
+/*  
+	Simulation of data based on the inferred network
+		structure and parameters.
+	mode = 0 (local) : for each case, instantiate parameters de novo.
+						Better for assessing uncertainty.
+	mode = 1 (global) : instantiate all parameters once.
+						Assuming known network.
+*/
+
+function simulate_data (params, num_cases, mode)
+{
+	if (mode == 0)
+	{		
+		result = {num_cases, Abs(params)};
+		
+		for (case = 0; case < num_cases; case = case+1)
+		{	
+			/* instantiate network parameters from conditional posterior distribution functions */
+			for (i = 0; i < Abs(params); i = i + 1)
+			{
+				(params["Node"+i])["Parameters"] = {{}};	/* stores instantiations */
+				(params["Node"+i])["State"] = -1;
+				
+				/* if this is a root node (no parents) then instantiate */
+				if (Rows((params["Node"+i])["Parents"]) == 0)
+				{
+					ExecuteCommands("(params[\"Node\"+i])[\"Parameters\"] = "+((params["Node"+i])["CPDFs"])[0]+";");
+					urn = Random(0,1);
+					r_i = Columns((params["Node"+i])["Parameters"]);
+					for (k = 0; k < r_i; k = k+1)
+					{
+						if ( urn <= ((params["Node"+i])["Parameters"])[k] )
+						{
+							(params["Node"+i])["State"] = k;
+							break;
+						}
+						urn = urn - ((params["Node"+i])["Parameters"])[k];
+					}
+				}
+			}
+			
+			num_levels = {Abs(params),1};
+			
+			while (1)
+			{
+				/* loop until parameters are instantiated for all nodes */
+				all_instantiated = 1;
+				for (i = 0; i < Abs(params); i = i+1)
+				{
+					if ((params["Node"+i])["State"] < 0)
+					{
+						all_instantiated = 0;
+						
+						/* are all parents instantiated? */
+						ok_to_go = 1;
+						parents = (params["Node"+i])["Parents"];
+						num_parent_combos = 1;
+						pa_index = 0;
+						
+						for (p = 0; p < Rows(parents); p = p+1)
+						{
+							pid = parents[p];
+							if ( (params["Node"+pid])["State"] < 0 )
+							{
+								ok_to_go = 0;
+								break;
+							}
+							
+							/* compute parental index */
+							pa_index = pa_index + (params["Node"+pid])["State"] * num_parent_combos;
+							num_levels[pid] = Columns((params["Node"+pid])["Parameters"]);
+							num_parent_combos = num_parent_combos * num_levels[pid];
+						}
+						
+						/* instantiate this node's parameters */
+						if (ok_to_go)
+						{
+							ExecuteCommands("(params[\"Node\"+i])[\"Parameters\"] = "+((params["Node"+i])["CPDFs"])[pa_index]+";");
+							urn = Random(0,1);
+							r_i = Columns((params["Node"+i])["Parameters"]);
+							for (k = 0; k < r_i; k = k+1)
+							{
+								if ( urn <= ((params["Node"+i])["Parameters"])[k] )
+								{
+									(params["Node"+i])["State"] = k;
+									break;
+								}
+								urn = urn - ((params["Node"+i])["Parameters"])[k];
+							}
+						}
+					}
+				}
+				/* end for loop */
+				
+				if (all_instantiated)
+				{
+					break;
+				}
+			}
+			/* end while */
+			
+			/* add case to result */
+			for (i = 0; i < Abs(params); i = i+1)
+			{
+				result[case][i] = (params["Node"+i])["State"];
+			}
+		}
+	}
+	
+	else	/* mode == 1 */
+	{
+		/* instantiate network parameters from conditional posterior distribution functions */
+		for (i = 0; i < Abs(params); i = i + 1)
+		{
+			
+			
+			
+			
+			(params["Node"+i])["Parameters"] = {{}};	/* stores instantiations */
+			(params["Node"+i])["State"] = -1;
+			
+			/* if this is a root node (no parents) then instantiate */
+			if (Rows((params["Node"+i])["Parents"]) == 0)
+			{
+				ExecuteCommands("(params[\"Node\"+i])[\"Parameters\"] = "+((params["Node"+i])["CPDFs"])[0]+";");
+				urn = Random(0,1);
+				r_i = Columns((params["Node"+i])["Parameters"]);
+				for (k = 0; k < r_i; k = k+1)
+				{
+					if ( urn <= ((params["Node"+i])["Parameters"])[k] )
+					{
+						(params["Node"+i])["State"] = k;
+						break;
+					}
+					urn = urn - ((params["Node"+i])["Parameters"])[k];
+				}
+			}
+		}
+	}
+	
+	return result;
+}
+
+
+function import_xmlbif (filename)
+{
+	import = {};
+	fscanf (filename, "Raw", input);
+	def_tags = input||"<DEFINITION>";
+	if (def_tags[0] < 0)
+	{
+		fprintf (stdout, "ERROR: <DEFINITION> tag absent from XML, exiting..");
+		return 1;
+	}
+	ntags = Abs(Rows(def_tags));
+	for (tag = 0; tag < ntags/2; tag = tag+1)
+	{
+		start_char = def_tags[tag*2+1];
+		if (tag == ntags/2-1) { end_char = Abs(input); }
+		else { end_char = def_tags[(tag+1)*2]; }
+		substr = input[start_char][end_char];
+		
+		/* start a new node */
+		for_tag = substr||"<FOR>";
+		start_char = for_tag[1];
+		
+		
+		ExecuteCommands("import[\""++"\"]");
+	}
+}
+
