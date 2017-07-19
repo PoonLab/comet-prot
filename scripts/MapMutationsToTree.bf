@@ -41,6 +41,8 @@ function codeToLetters (codonCode)
 /* ____________________________________________________________________	*/
 function importLikelihoodFunction (dummy)
 {
+    fprintf (stdout, "importLF\n");
+    
 	SetDialogPrompt ("Choose a file containing an exported likelihood function:");
 	fscanf(PROMPT_FOR_FILE, "Raw", importLF);
 	
@@ -182,7 +184,7 @@ function setupMapToTree (sampling_option)
 			}
 		}
 	}
-
+	
 	seqToBranchMap[filteredData.species][0] = h-1;
 	seqToBranchMap[h-1][1] = filteredData.species;
 	
@@ -292,8 +294,14 @@ function reconstructAncestors (rep)
 			
 			writeToFile is introduced as the write-to-path for 
 			convenience */
-	
-	writeToFile = outfile+rep;
+	if (rep >= 0)
+	{
+		writeToFile = outfile+rep;
+	}
+	else
+	{
+		writeToFile = outfile;
+	}
 	fprintf (stdout, "Writing to file ", writeToFile, "\n");
 	fprintf (writeToFile, CLEAR_FILE, KEEP_OPEN);
 	
@@ -310,7 +318,7 @@ function reconstructAncestors (rep)
 		p2 = seqToBranchMap[pid][1] - filteredData.species;
 		
 		bn = branchNames [p1];
-		
+		fprintf (writeToFile, bn);
 		
 		for (site = 0; site < filteredDataA.sites; site = site + 1)		/* for every site in sequence */
 		{
@@ -321,35 +329,33 @@ function reconstructAncestors (rep)
 					 I added this behavious to ReconstructAncestors 
 					 in May 2007 */
 					 
-			if (codonInfo2[h][c1] >= stateCharCount)
+			if (codonInfo2[1][c1] >= stateCharCount)
 			{
-				if (output_option == 0 && site > 0)		/* CSV formatting */
-				{
-					fprintf (writeToFile, ",0");
-				}
+				fprintf (writeToFile, ",0");
 				continue;
 			}
 			/* END 20070926SLKP */
 
 			cd1 = codonInfo2[h] [c1];	/* derived codon state on branch */
 			cd2 = codonInfo2[p2][c1];	/* ancestral	"		"		 */
-
+			
+			if (cd1 >= stateCharCount || cd2 >= stateCharCount)	/* --- */
+			{
+				fprintf (writeToFile, ",0");	/* ignore gaps */
+				continue;
+			}
 			
 			aa1 = _GC_[cd1];
 			aa1 = codonTo3[aa1];		/* get amino acid character */
 			aa2 = _GC_[cd2];
 			aa2 = codonTo3[aa2];
 			
-			if (output_option == 0 && site > 0)		/* CSV formatting */
-			{
-				fprintf (writeToFile, ",");
-			}
 			
 			if (aa1 != aa2)		/* nonsynonymous substitution */
 			{
 				if (output_option == 0)		/* CSV matrix format */
 				{
-					fprintf (writeToFile, "1");
+					fprintf (writeToFile, ",1");
 				}
 				else						/* list format */
 				{
@@ -359,7 +365,7 @@ function reconstructAncestors (rep)
 			} else {
 				if (output_option == 0)
 				{
-					fprintf (writeToFile, "0");
+					fprintf (writeToFile, ",0");
 				}
 			}
 		}
@@ -372,12 +378,10 @@ function reconstructAncestors (rep)
 		}
 		else
 		{
-		    /*
 			if (aa_count == 0)
 			{
 				fprintf (writeToFile, rep, "\t", bn, "\tNone\n");
 			}
-			*/
 		}
 		
 		k = k + 1;		/* update parent sequence */
@@ -393,23 +397,24 @@ function reconstructAncestors (rep)
 		p2 = seqToBranchMap[pid][1]-filteredData.species;
 		
 		bn = branchNames [p1];
+		fprintf (writeToFile, bn);
 		/* fprintf ("branchIDs.out", bn, "\n"); */
 		/* bl = branchLengths [p1]; */
 		
 		
 		for (site = 0; site < filteredDataA.sites; site = site + 1)
 		{
-			if (output_option == 0 && site > 0)
-			{
-				fprintf (writeToFile, ",");
-			}
-			
-			
 			c1 = dupInfoA[site];
 			c2 = dupInfo [site];
 			
 			cd2 = codonInfo2[p2][c1];
 			cd1 = codonInfo [h] [c2];
+			
+			if (cd1 >= stateCharCount || cd2 >= stateCharCount)	/* --- */
+			{
+				fprintf (writeToFile, ",0");
+				continue;
+			}
 			
 			if (cd1 >= 0)	/* non-ambiguous codon */
 			{
@@ -422,7 +427,7 @@ function reconstructAncestors (rep)
 				{
 					if (output_option == 0)
 					{
-						fprintf (writeToFile, "1");
+						fprintf (writeToFile, ",1");
 					}
 					else
 					{
@@ -434,7 +439,7 @@ function reconstructAncestors (rep)
 				{
 					if (output_option == 0)
 					{
-						fprintf (writeToFile, "0");
+						fprintf (writeToFile, ",0");
 					}
 				}
 			}
@@ -442,7 +447,7 @@ function reconstructAncestors (rep)
 			{
 				if (output_option == 0)
 				{
-					fprintf (writeToFile, "0");
+					fprintf (writeToFile, ",0");
 				}
 			}
 		}
@@ -453,12 +458,10 @@ function reconstructAncestors (rep)
 		}
 		else
 		{
-		    /*
 			if (aa_count == 0)
 			{
 				fprintf (writeToFile, rep, "\t", bn, "\tNone\n");
 			}
-			*/
 		}
 	}
 	/* START 20070926SLKP: CLOSE_FILE is needed to flush all to disk */
@@ -477,6 +480,7 @@ function reconstructAncestors (rep)
 /*		MAIN LOOP																		*/
 /* ==================================================================================== */
 
+
 /* using universal genetic code by default */
 skipCodeSelectionStep = 1;		
 dummy = HYPHY_BASE_DIRECTORY+"TemplateBatchFiles"+DIRECTORY_SEPARATOR+"TemplateModels"+DIRECTORY_SEPARATOR+"chooseGeneticCode.def";
@@ -493,13 +497,19 @@ for (h=0; h<64; h=h+1)	/* for every codon number */
 	}
 }
 
+fprintf(stdout, "in main loop\n");
 
-/*START 20070926SLKP: handle the case of failing to select an LF */	
-if (!importLikelihoodFunction(0)) 
+/*START 20070926SLKP: handle the case of failing to select an LF */
+
+flag = importLikelihoodFunction(0);  // returns 1 on success, 0 otherwise
+if (flag == 0) 
 {
 	return 0;
 }
 /*END 20070926SLKP*/	
+
+
+
 
 ChoiceList (option, "Ancestor reconstruction option: ", 1, SKIP_NONE, 
 				"Maximum likelihood", "Map most likely reconstruction to internal nodes.",
@@ -533,15 +543,8 @@ if (option == 1)
 else
 {
 	setupMapToTree(0);
-	reconstructAncestors(0);
+	reconstructAncestors(-1);
 }
-
-
-
-
-
-
-
 
 
 
