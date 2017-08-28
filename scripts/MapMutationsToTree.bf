@@ -41,8 +41,6 @@ function codeToLetters (codonCode)
 /* ____________________________________________________________________	*/
 function importLikelihoodFunction (dummy)
 {
-    fprintf (stdout, "importLF\n");
-    
 	SetDialogPrompt ("Choose a file containing an exported likelihood function:");
 	fscanf(PROMPT_FOR_FILE, "Raw", importLF);
 	
@@ -275,7 +273,7 @@ function setupMapToTree (sampling_option)
 /*	variables, for presence or absence of a nonsynonymous substitution	*/
 /*	at that position in each branch.									*/
 
-function reconstructAncestors (rep)
+function reconstructAncestors (rep, makeLabels)
 {
 	/* branchLengths = BranchLength (bltree, -1); */
 	
@@ -306,7 +304,35 @@ function reconstructAncestors (rep)
 	fprintf (writeToFile, CLEAR_FILE, KEEP_OPEN);
 	
 	/* END 20070926SLKP */
-	
+
+	if (makeLabels) {
+	    labels = {};
+	    k = filteredData.species+1;
+	    p1 = seqToBranchMap[k][0];
+	    pid = flatTreeRep[p1];
+	    p2 = seqToBranchMap[pid][1] - filteredData.species;
+
+	    for (site = 0; site < filteredDataA.sites; site = site+1) {
+	        c1 = dupInfoA[site];
+	        cd2 = codonInfo2[p2][c1];  // ancestral codon state on branch
+	        aa = _GC_[cd2];
+	        aa = codonTo3[aa];  // amino acid
+
+	        labels[Abs(labels)] = aa;
+	    }
+
+        // write header row
+	    for (i = 0; i < Abs(labels); i=i+1) {
+	        if (i>0) {
+	            fprintf(LAST_FILE_PATH, ",");
+	        }
+	        fprintf(LAST_FILE_PATH, labels[i], i+1);
+	    }
+	    fprintf(LAST_FILE_PATH, "\n");
+	}
+
+
+
 	k = filteredData.species + 1;		/* root ancestral sequence */
 	
 	for (h = 1; h < filteredDataA.species; h = h + 1)	/* for every internal branch */
@@ -497,7 +523,6 @@ for (h=0; h<64; h=h+1)	/* for every codon number */
 	}
 }
 
-fprintf(stdout, "in main loop\n");
 
 /*START 20070926SLKP: handle the case of failing to select an LF */
 
@@ -518,7 +543,13 @@ ChoiceList (option, "Ancestor reconstruction option: ", 1, SKIP_NONE,
 ChoiceList (output_option, "Output option: ", 1, SKIP_NONE,
 				"Binary matrix", "Write comma-separated (CSV) binary matrices to file, where 1 indicates a site-specific substitution event.",
 				"List", "List amino acid substitutions per branch.");
-	
+
+header_option = 1;
+if (output_option == 0) {
+    ChoiceList(header_option, "Header option: ", 1, SKIP_NONE,
+                "No", "Skip header row.",
+                "Yes", "Generate column labels from amino acid sequence reconstruction at root.");
+}
 	
 SetDialogPrompt ("Provde a filename to write output(s) to: ");
 fprintf (PROMPT_FOR_FILE, CLEAR_FILE);
@@ -537,13 +568,13 @@ if (option == 1)
 	for (this_rep = 0; this_rep < max_reps; this_rep = this_rep+1)
 	{
 		setupMapToTree(1);
-		reconstructAncestors(this_rep);
+		reconstructAncestors(this_rep, header_option);
 	}
 }
 else
 {
 	setupMapToTree(0);
-	reconstructAncestors(-1);
+	reconstructAncestors(-1, header_option);
 }
 
 

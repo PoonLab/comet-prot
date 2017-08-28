@@ -12,10 +12,14 @@ ncol = Columns(data);
 fprintf (stdout, "Reduced data to ", ncol, " sites\n");
 
 // assign a node for each codon site in the data matrix
-nodes = {};
+nodes = {};  // initialize associative list (dictionary)
+
+//FIXME: `names` is undefined!
+
+// for every column
 for (i=0; i < ncol; i=i+1) {
-    // node_id, max_parents, sample_size, nlevels
-    nodes[Abs(nodes)] = add_discrete_node(names[i], 1, 0, 2);
+    // add_discrete_node creates an entry into assoc.list to represent a variable
+    nodes[Abs(nodes)] = add_discrete_node(names[i], 1, 0, 2);  // node_id, max_parents, sample_size, nlevels
 }
 
 // construct the BGM object
