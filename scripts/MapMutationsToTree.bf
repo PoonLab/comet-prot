@@ -1,3 +1,4 @@
+VERBOSITY_LEVEL=1;
 
 codonTo3 = {};
 
@@ -305,7 +306,7 @@ function reconstructAncestors (rep, makeLabels)
 	
 	/* END 20070926SLKP */
 
-	if (makeLabels & output_option==0) {
+	if (makeLabels && output_option==0) {
 	    labels = {};
 	    k = filteredData.species+1;
 	    p1 = seqToBranchMap[k][0];
@@ -344,10 +345,17 @@ function reconstructAncestors (rep, makeLabels)
 		p2 = seqToBranchMap[pid][1] - filteredData.species;
 		
 		bn = branchNames [p1];
-		fprintf (writeToFile, bn);
+		
+		if (output_option == 1) {
+    		fprintf (writeToFile, bn);  // Don't write branch names to CSV file
+    	}
 		
 		for (site = 0; site < filteredDataA.sites; site = site + 1)		/* for every site in sequence */
 		{
+		    if (site > 0) {
+		        fprintf(writeToFile, ",");
+		    }
+		
 			c1 = dupInfoA[site];
 			/* START 20070926SLKP: need to handle the case 
 					 when a site has all gaps - then ancestral 
@@ -357,7 +365,7 @@ function reconstructAncestors (rep, makeLabels)
 					 
 			if (codonInfo2[1][c1] >= stateCharCount)
 			{
-				fprintf (writeToFile, ",0");
+				fprintf (writeToFile, "0");
 				continue;
 			}
 			/* END 20070926SLKP */
@@ -367,7 +375,7 @@ function reconstructAncestors (rep, makeLabels)
 			
 			if (cd1 >= stateCharCount || cd2 >= stateCharCount)	/* --- */
 			{
-				fprintf (writeToFile, ",0");	/* ignore gaps */
+				fprintf (writeToFile, "0");	/* ignore gaps */
 				continue;
 			}
 			
@@ -381,7 +389,7 @@ function reconstructAncestors (rep, makeLabels)
 			{
 				if (output_option == 0)		/* CSV matrix format */
 				{
-					fprintf (writeToFile, ",1");
+					fprintf (writeToFile, "1");
 				}
 				else						/* list format */
 				{
@@ -391,7 +399,7 @@ function reconstructAncestors (rep, makeLabels)
 			} else {
 				if (output_option == 0)
 				{
-					fprintf (writeToFile, ",0");
+					fprintf (writeToFile, "0");
 				}
 			}
 		}
@@ -423,13 +431,20 @@ function reconstructAncestors (rep, makeLabels)
 		p2 = seqToBranchMap[pid][1]-filteredData.species;
 		
 		bn = branchNames [p1];
-		fprintf (writeToFile, bn);
+		
+		if (output_option == 1) {
+    		fprintf (writeToFile, bn);
+    	}
 		/* fprintf ("branchIDs.out", bn, "\n"); */
 		/* bl = branchLengths [p1]; */
 		
 		
 		for (site = 0; site < filteredDataA.sites; site = site + 1)
 		{
+		    if (site > 0) {
+		        fprintf(writeToFile, ",");
+		    }
+		    
 			c1 = dupInfoA[site];
 			c2 = dupInfo [site];
 			
@@ -438,7 +453,7 @@ function reconstructAncestors (rep, makeLabels)
 			
 			if (cd1 >= stateCharCount || cd2 >= stateCharCount)	/* --- */
 			{
-				fprintf (writeToFile, ",0");
+				fprintf (writeToFile, "0");
 				continue;
 			}
 			
@@ -453,7 +468,7 @@ function reconstructAncestors (rep, makeLabels)
 				{
 					if (output_option == 0)
 					{
-						fprintf (writeToFile, ",1");
+						fprintf (writeToFile, "1");
 					}
 					else
 					{
@@ -465,7 +480,7 @@ function reconstructAncestors (rep, makeLabels)
 				{
 					if (output_option == 0)
 					{
-						fprintf (writeToFile, ",0");
+						fprintf (writeToFile, "0");
 					}
 				}
 			}
@@ -473,7 +488,7 @@ function reconstructAncestors (rep, makeLabels)
 			{
 				if (output_option == 0)
 				{
-					fprintf (writeToFile, ",0");
+					fprintf (writeToFile, "0");
 				}
 			}
 		}

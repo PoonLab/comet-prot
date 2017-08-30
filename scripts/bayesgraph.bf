@@ -1,3 +1,4 @@
+VERBOSITY_LEVEL=2;
 
 ExecuteAFile ("bayesgraph.ibf");
 
@@ -5,7 +6,7 @@ ExecuteAFile ("bayesgraph.ibf");
 //data = import_data("../data/toBGM-AD.csv", 1);
 //fprintf (stdout, names, "\n");
 
-data = import_data("../data/ancestral.csv", 0);
+data = import_data("../data/1a_1b.anc.csv", 1);
 data = filter_data_matrix(data, 10);  // drop sites with no substitutions
 
 ncol = Columns(data);
@@ -33,8 +34,8 @@ attach_data("my_bgm", data, 0, 0, 0);
 VERBOSITY_LEVEL=7;  // report everything!
 
 // run MCMC sample (total number of steps, burnin, number of samples)
-result = order_MCMC("my_bgm", 1000, 1000, 20);
-fprintf(stdout, result);
+result = order_MCMC("my_bgm", 100000, 10000, 100);
+//fprintf(stdout, result);
 
 /*
 write_edgelist("../results/BGM-AD.edgelist2.withSubtype.csv", result, 1);
