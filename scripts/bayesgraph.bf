@@ -5,7 +5,7 @@ ExecuteAFile ("bayesgraph.ibf");
 //data = import_data("../data/toBGM-AD.csv", 1);
 //fprintf (stdout, names, "\n");
 
-data = import_data("../data/ancestral.csv", 1);
+data = import_data("../data/ancestral.csv", 0);
 data = filter_data_matrix(data, 10);  // drop sites with no substitutions
 
 ncol = Columns(data);

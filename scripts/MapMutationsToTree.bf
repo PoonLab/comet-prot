@@ -305,7 +305,7 @@ function reconstructAncestors (rep, makeLabels)
 	
 	/* END 20070926SLKP */
 
-	if (makeLabels) {
+	if (makeLabels & output_option==0) {
 	    labels = {};
 	    k = filteredData.species+1;
 	    p1 = seqToBranchMap[k][0];
