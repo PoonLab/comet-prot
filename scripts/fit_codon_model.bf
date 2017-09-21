@@ -19,7 +19,7 @@ function computeScalingFactorB(rateMatrix, baseFreqs)
 /*_____________________________________________________________________ */
 
 NICETY_LEVEL = 3;
-VERBOSITY_LEVEL = 0;
+VERBOSITY_LEVEL = 1;
 
 dummy = HYPHY_BASE_DIRECTORY + "TemplateBatchFiles" + DIRECTORY_SEPARATOR + "TemplateModels" + DIRECTORY_SEPARATOR + "chooseGeneticCode.def";
 ExecuteCommands ("#include \""+dummy+"\";");

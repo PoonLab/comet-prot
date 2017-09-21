@@ -293,12 +293,9 @@ function reconstructAncestors (rep, makeLabels)
 			
 			writeToFile is introduced as the write-to-path for 
 			convenience */
-	if (rep >= 0)
-	{
+	if (rep >= 0) {
 		writeToFile = outfile+rep;
-	}
-	else
-	{
+	} else {
 		writeToFile = outfile;
 	}
 	fprintf (stdout, "Writing to file ", writeToFile, "\n");
@@ -332,6 +329,10 @@ function reconstructAncestors (rep, makeLabels)
 	    fprintf(LAST_FILE_PATH, "\n");
 	}
 
+    if (output_option==1) {
+        // write header row for tab-separated list
+        fprintf(LAST_FILE_PATH, "rep\tbranch\tsite\tfromAA\ttoAA\n");
+    }
 
 
 	k = filteredData.species + 1;		/* root ancestral sequence */
@@ -346,13 +347,9 @@ function reconstructAncestors (rep, makeLabels)
 		
 		bn = branchNames [p1];
 		
-		if (output_option == 1) {
-    		fprintf (writeToFile, bn);  // Don't write branch names to CSV file
-    	}
-		
 		for (site = 0; site < filteredDataA.sites; site = site + 1)		/* for every site in sequence */
 		{
-		    if (site > 0) {
+		    if (site > 0 && output_option==0) {
 		        fprintf(writeToFile, ",");
 		    }
 		
@@ -363,7 +360,7 @@ function reconstructAncestors (rep, makeLabels)
 					 I added this behavious to ReconstructAncestors 
 					 in May 2007 */
 					 
-			if (codonInfo2[1][c1] >= stateCharCount)
+			if (codonInfo2[1][c1] >= stateCharCount && output_option==0)
 			{
 				fprintf (writeToFile, "0");
 				continue;
@@ -375,7 +372,9 @@ function reconstructAncestors (rep, makeLabels)
 			
 			if (cd1 >= stateCharCount || cd2 >= stateCharCount)	/* --- */
 			{
-				fprintf (writeToFile, "0");	/* ignore gaps */
+			    if (output_option==0) {
+    				fprintf (writeToFile, "0");	/* ignore gaps */
+    			}
 				continue;
 			}
 			
@@ -393,7 +392,7 @@ function reconstructAncestors (rep, makeLabels)
 				}
 				else						/* list format */
 				{
-					fprintf (writeToFile, rep, "\t", bn, "\t", site, "\t", aa2, "-->", aa1, "\n");
+					fprintf (writeToFile, rep, "\t", bn, "\t", site+1, "\t", aa2, "\t", aa1, "\n");
 					aa_count = aa_count + 1;
 				}
 			} else {
@@ -406,16 +405,8 @@ function reconstructAncestors (rep, makeLabels)
 		/* end loop over sites */
 		
 		
-		if (output_option == 0)
-		{
+		if (output_option == 0) {
 			fprintf (writeToFile, "\n");	/* end of line */
-		}
-		else
-		{
-			if (aa_count == 0)
-			{
-				fprintf (writeToFile, rep, "\t", bn, "\tNone\n");
-			}
 		}
 		
 		k = k + 1;		/* update parent sequence */
@@ -432,16 +423,13 @@ function reconstructAncestors (rep, makeLabels)
 		
 		bn = branchNames [p1];
 		
-		if (output_option == 1) {
-    		fprintf (writeToFile, bn);
-    	}
 		/* fprintf ("branchIDs.out", bn, "\n"); */
 		/* bl = branchLengths [p1]; */
 		
 		
 		for (site = 0; site < filteredDataA.sites; site = site + 1)
 		{
-		    if (site > 0) {
+		    if (site > 0 && output_option==0) {
 		        fprintf(writeToFile, ",");
 		    }
 		    
@@ -466,43 +454,30 @@ function reconstructAncestors (rep, makeLabels)
 				
 				if (aa1 != aa2)		/* nonsynonymous substitution */
 				{
-					if (output_option == 0)
-					{
+					if (output_option == 0) {
 						fprintf (writeToFile, "1");
-					}
-					else
-					{
-						fprintf (writeToFile, rep, "\t", bn, "\t", site, "\t", aa2, "-->", aa1, "\n");
+					} else {
+						fprintf (writeToFile, rep, "\t", bn, "\t", site+1, "\t", aa2, "\t", aa1, "\n");
 						aa_count = aa_count + 1;
 					}
 				} 
 				else 
 				{
-					if (output_option == 0)
-					{
+					if (output_option == 0) {
 						fprintf (writeToFile, "0");
 					}
 				}
 			}
 			else	/* codon contains as mixture, ignore! */
 			{
-				if (output_option == 0)
-				{
+				if (output_option == 0) {
 					fprintf (writeToFile, "0");
 				}
 			}
 		}
 		
-		if (output_option == 0)
-		{
+		if (output_option == 0) {
 			fprintf (writeToFile, "\n");	/* end line */
-		}
-		else
-		{
-			if (aa_count == 0)
-			{
-				fprintf (writeToFile, rep, "\t", bn, "\tNone\n");
-			}
 		}
 	}
 	/* START 20070926SLKP: CLOSE_FILE is needed to flush all to disk */

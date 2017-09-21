@@ -147,39 +147,25 @@ function import_data (inData, hasHeader)
 	names = {{}};
 	num_nodes = 0;
 	
-	if (hasHeader)
-	{
+	if (hasHeader) {
 		names = file_input["0"];
 		bgm_data_matrix = file_input["1"];
-		
-		fprintf (stdout, "Read ", Rows(bgm_data_matrix), " cases from file.\n");
-		
 		num_nodes = Columns(bgm_data_matrix);
-		
-		if (Abs(file_input["0"]) != num_nodes)
-		{
+		if (Abs(file_input["0"]) != num_nodes) {
 			fprintf (stdout, "ERROR! Number of items in header does not match the number of items in the data matrix.");
 			return 0;
 		}
-		
-		fprintf (stdout, "Detected ", num_nodes, " variables.\n");
 	}
-	else
-	{
+	else {
 		bgm_data_matrix = file_input;
-		
-		fprintf (stdout, "Read ", Rows(bgm_data_matrix), " cases from file.\n");
-		
 		num_nodes = Columns(bgm_data_matrix);
 		names = {num_nodes, 1};
-		
-		for (i = 0; i < num_nodes; i = i+1)
-		{
+		for (i = 0; i < num_nodes; i = i+1) {
 			names[i] = i;
 		}
-		
-		fprintf (stdout, "Detected ", num_nodes, " variables.\n");
 	}
+	fprintf (stdout, "Read ", Rows(bgm_data_matrix), " cases from file.\n");
+	fprintf (stdout, "Detected ", num_nodes, " variables.\n");
 	
 	return bgm_data_matrix;
 }
