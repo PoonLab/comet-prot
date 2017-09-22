@@ -27,9 +27,11 @@ function filter_data_matrix (mx, min_count) {
         }
     }
     
+    num_nodes = Abs(keep);
+    
     // use array to create new matrix
-    mx2 = {nrows, Abs(keep)};
-    for (k=0; k<Abs(keep); k=k+1) {
+    mx2 = {nrows, num_nodes};
+    for (k=0; k<num_nodes; k=k+1) {
         j = keep[k];  // retrieve k-th column index from array
         for (i=0; i<nrows; i=i+1) {
             mx2[i][k] = mx[i][j];  // transfer contents of column j
@@ -307,16 +309,13 @@ function display_MCMC_chain (res)
 	/* locate min/max and end of trace */
 	for (k = 0; k < Rows(pp_trace); k = k+1)
 	{
-		if (pp_trace[k] == 0)
-		{
+		if (pp_trace[k] == 0) {
 			break;
 		}
-		if (pp_trace[k] < min_trace)
-		{
+		if (pp_trace[k] < min_trace) {
 			min_trace = pp_trace[k];
 		}
-		if (pp_trace[k] > max_trace)
-		{
+		if (pp_trace[k] > max_trace) {
 			max_trace = pp_trace[k];
 		}
 	}
@@ -348,10 +347,14 @@ function display_MCMC_chain (res)
 	return 0;
 }
 
-function write_MCMC_chain(filename, res) {
+function write_MCMC_chain(filename, res, nsamples) {
+    if (nsamples > Rows(res)) {
+        fprintf(stdout, "Error in write_MCMC_chain: number of samples to output exceeds number of rows in results matrix!\n");
+        return 1;
+    }
     pp_trace = res[-1][0];
     fprintf(filename, CLEAR_FILE, KEEP_OPEN);
-    for (k = 0; k < Rows(pp_trace); k=k+1) {
+    for (k = 0; k < nsamples; k=k+1) {
         fprintf(filename, pp_trace[k], "\n");
     }
     fprintf(filename, CLOSE_FILE);
@@ -394,22 +397,16 @@ function get_MCMC_graph (res, num_nodes, mode)
 function write_edgelist (filename,res,directed)
 {
 	fprintf (filename, CLEAR_FILE, KEEP_OPEN);
-	if (directed)	
-	{
-		for (row = 0; row < num_nodes; row = row+1)
-		{
-			for (col = 0; col < num_nodes; col = col+1)
-			{
+	if (directed) {
+		for (row = 0; row < num_nodes; row = row+1) {
+			for (col = 0; col < num_nodes; col = col+1) {
 				fprintf (filename, names[row], ",", names[col], ",", res[row*num_nodes+col][1], "\n");
 			}
 		}
 	}
-	else
-	{
-		for (row = 0; row < num_nodes-1; row = row+1)
-		{
-			for (col = row+1; col < num_nodes; col = col+1)
-			{
+	else {
+		for (row = 0; row < num_nodes-1; row = row+1) {
+			for (col = row+1; col < num_nodes; col = col+1) {
 				fprintf (filename, names[row], ",", names[col], ",", res[row*num_nodes+col][1] + res[col*num_nodes+row][1], "\n");
 			}
 		}
