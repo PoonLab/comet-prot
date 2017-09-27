@@ -28,15 +28,18 @@ function filter_data_matrix (mx, min_count) {
     }
     
     num_nodes = Abs(keep);
+    new_names = {};
     
     // use array to create new matrix
     mx2 = {nrows, num_nodes};
     for (k=0; k<num_nodes; k=k+1) {
         j = keep[k];  // retrieve k-th column index from array
+        new_names[Abs(new_names)] = names[j];  // transfer label from names vector
         for (i=0; i<nrows; i=i+1) {
             mx2[i][k] = mx[i][j];  // transfer contents of column j
         }
     }
+    names = new_names;  // replace names vector
     
     return mx2;
 }
@@ -163,7 +166,7 @@ function import_data (inData, hasHeader)
 		num_nodes = Columns(bgm_data_matrix);
 		names = {num_nodes, 1};
 		for (i = 0; i < num_nodes; i = i+1) {
-			names[i] = i;
+			names[i] = ""+i;  // cast as string
 		}
 	}
 	fprintf (stdout, "Read ", Rows(bgm_data_matrix), " cases from file.\n");

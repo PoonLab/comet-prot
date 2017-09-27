@@ -15,8 +15,11 @@ header_option = 1;
 if (has_header != 0 && (has_header=="n" || has_header=="N")) {
     header_option = 0;  // will generate arbitrary labels
 }
+fprintf(stdout, "header_option: ", header_option, "\n");
+
 data = import_data(LAST_FILE_PATH, header_option);
 fprintf(LAST_FILE_PATH, CLOSE_FILE);
+
 
 /* determine the maximum number of 1's per column */
 max_count = 0;
