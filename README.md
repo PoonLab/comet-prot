@@ -23,7 +23,43 @@ to the sequence alignment by running the script (which works just on command lin
 fit_codon_model.bf
 ```
 The following steps will be prompted:
+
 1. Choose a genetic code
 
 There is a large selection of genetic codes available, it will determine how nucleotide substitutions 
-are interpreted as missense, nonsense or silent mutations
+are interpreted as missense, nonsense or silent mutations.
+
+2. Specify a codon data file
+
+Enter an absolute path to the file containing the cleaned sequence alignment. It is critical that this 
+alignment comprises a single open reading frame. Sequence names cannot contain any characters other 
+than the alphanumeric characters and the underscore character.
+
+3. Model options
+
+This option determines how the model parameters are distributed across branches in the tree.
+The *Local* option assigns an instance of each parameter to every branch in the tree.
+The *Global* option means that each model parameter is estimated using the information from all branches in the tree.
+The *Global w/variation* option models this rate variation using one of many parametric distributions, 
+such as the prototypical gamma distribution.
+The *Global w/variation+HM* option uses a Hidden Markov model to smooth the assignment of rate categories 
+along the length of the sequence alignment.
+
+4. Nucleotide model
+
+The codon substitution model implemented in these scripts has a nested model of nucleotide substitution
+that needs to be specified by the user (uses the 6-digit PAUP*-style model specification string).
+
+5. Specify a tree file
+
+Enter a relative or absolute path to the file containing the reconstructed phylogeny in a Newick tree string format
+and branch length information. Do not include bootsrap information.
+
+6. Fit a likelihood function
+
+Specify a relative or absolute path to a file to write a serialized likelihood function, which encodes the data, model and parameter estimates. This output is written in a NEXUS format.
+
+
+
+
+
