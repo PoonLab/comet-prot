@@ -16,3 +16,11 @@ HYPHYMP BASEPATH=/usr/local/lib/hyphy <path to script>
 ```
 Otherwise, you can run the scripts through the graphical user interface by opening 
 the file through the file selection dialog.
+## Fit codon model ##
+The first step in our analysis pipeline is to fit a codon substitution model 
+to the sequence alignment by running the script (which works just on command line):
+```
+fit_codon_model.bf
+```
+The following steps will be prompted:
+1. Choose a genetic code
