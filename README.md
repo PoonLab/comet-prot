@@ -24,5 +24,6 @@ fit_codon_model.bf
 ```
 The following steps will be prompted:
 1. Choose a genetic code
+
 There is a large selection of genetic codes available, it will determine how nucleotide substitutions 
 are interpreted as missense, nonsense or silent mutations
