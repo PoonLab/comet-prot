@@ -49,6 +49,11 @@ HCV1b-NS5b.lf
 ```
 File containing the PhyML tree reconstruction.
 
+```
+HCV1b-NS5b.csv
+```
+Ancestral reconstruction CSV file.
+
 
 
 ## Fit codon model ##
