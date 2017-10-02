@@ -15,7 +15,41 @@ specify the path to your local installation, *e.g.*:
 HYPHYMP BASEPATH=/usr/local/lib/hyphy <path to script>
 ```
 Otherwise, you can run the scripts through the graphical user interface by opening 
-the file through the file selection dialog. Example files can be found [here](https://github.com/PoonLab/comet-prot/tree/master/data).
+the file through the file selection dialog. 
+Example files can be found [here](https://github.com/PoonLab/comet-prot/tree/master/data)
+and include the following:
+
+```
+HCV1b-NS5b.fasta
+```
+GenBank accession numbers retrieved from the [euHCVdb database](https://euhcvdb.ibcp.fr/euHCVdb/) for hepatitis C virus (HCV) subtype 1b nucleotide sequences with at least partial coverage of the gene NS5b.
+
+```
+HCV1b-NS5b.aliview.fa
+```
+Multiple sequence alignment file using MAFFT v7.305b and manually inspected and adjusted the resulting alignment with AliView v1.19-beta-3.
+
+```
+HCV1b-NS5b.mafft.fa
+```
+The remaining sequences in this data set ($n=536$), which ranged from 1043 to 1776 in nucleotide length.
+
+```
+HCV1b-NS5b.cleaned.fa
+```
+We used the built-in method in *HyPhy* to clean sequence names and remove stop codons
+
+```
+CV1b-NS5b.phyml.nwk
+```
+File including the maximum likelihood phylogenetic tree was reconstructed using PhyML with a bootstrap analysis.
+
+```
+HCV1b-NS5b.lf
+```
+File containing the PhyML tree reconstruction.
+
+
 
 ## Fit codon model ##
 
