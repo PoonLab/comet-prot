@@ -3,7 +3,7 @@
 *HyPhy* binaries can be downloaded for free [here](http://hyphy.org).
 If you want to compile the software package, the source code can be 
 obtained [here](http://github.com/veg/hyphy).
-Alternatively, a POSIX-threaded *HyPhy* binary (\path{hyphymp}) for Linux 
+Alternatively, a POSIX-threaded *HyPhy* binary (hyphymp) for Linux 
 can be obtained with the Ubuntu package manager with the command 
 ```
 sudo apt install hyphy-pt
