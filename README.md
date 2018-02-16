@@ -40,7 +40,7 @@ HCV1b-NS5b.cleaned.fa
 We used the built-in method in *HyPhy* to clean sequence names and remove stop codons
 
 ```
-CV1b-NS5b.phyml.nwk
+HCV1b-NS5b.phyml.nwk
 ```
 File including the maximum likelihood phylogenetic tree was reconstructed using PhyML with a bootstrap analysis.
 
