@@ -1,10 +1,7 @@
 VERBOSITY_LEVEL=2;
 
+// import helper functions from another file
 ExecuteAFile ("bayesgraph.ibf");
-
-//data = import_data("../data/baynet.csv", 1);
-//data = import_data("../data/toBGM-AD.csv", 1);
-//fprintf (stdout, names, "\n");
 
 SetDialogPrompt("Select file containing substitution matrix in CSV format");
 fprintf(PROMPT_FOR_FILE, KEEP_OPEN);
@@ -128,7 +125,7 @@ VERBOSITY_LEVEL=7;  // report everything!
 result = order_MCMC("my_bgm", chain, burnin, nsamples);
 //fprintf(stdout, result);
 
-write_edgelist(LAST_FILE_PATH, result, 1);
+write_edgelist(LAST_FILE_PATH, result, Abs(nodes), 1);
 mcmc_graph_to_dotfile(dot_file, 0.8, result, nodes);
 write_MCMC_chain(trace_file, result, nsamples);
 
