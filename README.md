@@ -102,7 +102,7 @@ Specify a relative or absolute path to a file to write a serialized likelihood f
 
 ## Map substitutions to the tree ##
 
-The next step in our pipeline is to reconstruct ancestral sequences in the tree based on the maximum likelihood parameter estimates of the model. Just on command lie, run the script:
+The next step in our pipeline is to reconstruct ancestral sequences in the tree based on the maximum likelihood parameter estimates of the model. On the command line, run the script:
 
 ```
 MapMutationsToTree.bf
