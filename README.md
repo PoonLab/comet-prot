@@ -112,7 +112,7 @@ The following steps will be prompted:
 
 1. Input data file
 
-Specify a relative or absolute path file containing the likelihhod function that was produced by the former script.
+Specify a relative or absolute path file containing the likelihood function that was produced by the former script.
 
 2. Select reconstruction option
 
